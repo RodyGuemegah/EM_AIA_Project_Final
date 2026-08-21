@@ -1,4 +1,4 @@
-.PHONY: install test lint sanity clean
+.PHONY: install test lint sanity ingest clean
 
 install:
 	python3 -m venv .venv
@@ -14,6 +14,9 @@ lint:
 
 sanity:
 	.venv/bin/python -m src.sanity data/raw/CMAPSSData
+
+ingest:
+	.venv/bin/python -m src.ingestion
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
