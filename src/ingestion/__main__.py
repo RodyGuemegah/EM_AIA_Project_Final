@@ -12,7 +12,7 @@ from src.ingestion.bronze import SUBSETS, run
 def main() -> int:
     p = argparse.ArgumentParser(description="Ingestion bronze C-MAPSS → Parquet")
     p.add_argument("--data-dir", default="data/raw/CMAPSSData")
-    p.add_argument("--out-dir", default="data/lake/bronze/engine_sensors")
+    p.add_argument("--out-dir", default=None)
     p.add_argument("--subsets", nargs="+", default=SUBSETS, choices=SUBSETS)
     args = p.parse_args()
 

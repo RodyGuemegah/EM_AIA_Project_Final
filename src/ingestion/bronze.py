@@ -35,6 +35,7 @@ from pathlib import Path
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
+from src.storage import get_lake_filesystem, lake_path
 
 from src.cmapss import load_test, load_train
 from src.fleet import add_flight_calendar
@@ -89,7 +90,7 @@ def ingest_subset(subset: str, data_dir: Path) -> pd.DataFrame:
     return df
 
 
-def write_bronze(df: pd.DataFrame, out_dir: Path) -> Path:
+def write_bronze(df: pd.DataFrame, out_dir: str, filesystem=None) -> str:
     """Écrit en Parquet partitionné par année/mois de vol.
 
     POURQUOI PARTITIONNER ?
@@ -100,13 +101,17 @@ def write_bronze(df: pd.DataFrame, out_dir: Path) -> Path:
     POURQUOI PARQUET ET PAS CSV ?
     Format colonnaire compressé : une requête sur 3 capteurs ne lit que ces
     3 colonnes, et le fichier pèse plusieurs fois moins lourd.
-    """
-    out_dir = Path(out_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)
 
+    POURQUOI UN PARAMÈTRE `filesystem` ?
+    Il découple la logique d'écriture du lieu de stockage. Par défaut
+    (`None`), PyArrow écrit sur le disque local — c'est ce qui permet aux
+    tests de tourner sans MinIO. En production, on lui passe le client S3
+    construit par `src.storage`.
+    """
     pq.write_to_dataset(
         pa.Table.from_pandas(df, preserve_index=False),
-        root_path=str(out_dir),
+        root_path=out_dir,
+        filesystem=filesystem,
         partition_cols=["flight_year", "flight_month"],
         existing_data_behavior="delete_matching",
         compression="snappy",
@@ -114,14 +119,16 @@ def write_bronze(df: pd.DataFrame, out_dir: Path) -> Path:
     return out_dir
 
 
-def run(data_dir: str | Path, out_dir: str | Path, subsets=None, seed: int = 42) -> pd.DataFrame:
-    """Ingère les sous-jeux demandés et écrit le résultat dans le lake."""
+def run(data_dir, out_dir=None, subsets=None, seed=42, filesystem=None):
     subsets = subsets or SUBSETS
     frames = [ingest_subset(s, Path(data_dir)) for s in subsets]
     df = pd.concat(frames, ignore_index=True)
-
-    # Une seule construction de flotte, sur l'identifiant global.
     df = add_flight_calendar(df, seed=seed, id_col="engine_id")
 
-    write_bronze(df, Path(out_dir))
+    if filesystem is None:
+        filesystem = get_lake_filesystem()
+    if out_dir is None:
+        out_dir = lake_path("bronze", "engine_sensors")
+
+    write_bronze(df, out_dir, filesystem=filesystem)
     return df

@@ -10,12 +10,16 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import pytest
+from pyarrow.fs import LocalFileSystem
 
 from src.cmapss import COLUMNS
 from src.ingestion.bronze import run
 
 SUBSETS_TEST = ["FD001", "FD003"]
 
+def _run_local(data_dir, out_dir, subsets=SUBSETS_TEST):
+    """Ingestion en local, sans MinIO — garde la CI autonome."""
+    return run(data_dir, str(out_dir), subsets=subsets, filesystem=LocalFileSystem())
 
 @pytest.fixture
 def faux_cmapss(tmp_path):
@@ -41,7 +45,7 @@ def faux_cmapss(tmp_path):
 
 def test_ingestion_ecrit_des_partitions(faux_cmapss, tmp_path):
     out = tmp_path / "lake"
-    df = run(faux_cmapss, out, subsets=SUBSETS_TEST)
+    df = _run_local(faux_cmapss, out, subsets=SUBSETS_TEST)
 
     assert len(df) == 2 * (75 + 30)
     assert list(out.glob("flight_year=*")), "aucune partition écrite"
@@ -49,7 +53,7 @@ def test_ingestion_ecrit_des_partitions(faux_cmapss, tmp_path):
 
 def test_immatriculations_uniques(faux_cmapss, tmp_path):
     """Un moteur = un avion. Pas de doublon entre sous-jeux ni entre splits."""
-    df = run(faux_cmapss, tmp_path / "lake", subsets=SUBSETS_TEST)
+    df = _run_local(faux_cmapss, tmp_path / "lake")
     correspondance = df.groupby("engine_id").tail_number.nunique()
 
     assert (correspondance == 1).all(), "un moteur porte plusieurs immatriculations"
@@ -59,7 +63,7 @@ def test_immatriculations_uniques(faux_cmapss, tmp_path):
 
 
 def test_colonnes_de_tracabilite_presentes(faux_cmapss, tmp_path):
-    df = run(faux_cmapss, tmp_path / "lake", subsets=SUBSETS_TEST)
+    df = _run_local(faux_cmapss, tmp_path / "lake")
     for col in ("fd_subset", "split", "source_file", "ingested_at", "pipeline_version"):
         assert col in df.columns
         assert df[col].notna().all()
@@ -67,10 +71,10 @@ def test_colonnes_de_tracabilite_presentes(faux_cmapss, tmp_path):
 
 def test_bronze_ne_plafonne_pas_le_rul(faux_cmapss, tmp_path):
     """Le plafond à 125 est un choix de modélisation : il appartient au silver."""
-    df = run(faux_cmapss, tmp_path / "lake", subsets=SUBSETS_TEST)
+    df = _run_local(faux_cmapss, tmp_path / "lake")
     assert df.rul.max() > 55
 
 
 def test_erreur_si_fichier_manquant(tmp_path):
     with pytest.raises(FileNotFoundError):
-        run(tmp_path, tmp_path / "lake", subsets=["FD001"])
+        _run_local(tmp_path, tmp_path / "lake", subsets=["FD001"])
