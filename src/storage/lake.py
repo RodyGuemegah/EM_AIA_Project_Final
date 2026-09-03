@@ -10,7 +10,7 @@ from pyarrow.fs import S3FileSystem
 load_dotenv()
 
 LAYERS = ("bronze", "silver", "gold")
-
+BRONZE_ENGINE_SENSORS = "engine_sensors"
 
 def get_lake_filesystem() -> S3FileSystem:
   
