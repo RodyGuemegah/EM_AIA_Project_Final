@@ -11,7 +11,7 @@ import pyarrow.parquet as pq
 from sklearn.model_selection import GroupShuffleSplit
 
 from src.storage import get_lake_filesystem, lake_path
-from src.models.dataset import load_bronze, split_par_moteur
+
 
 def load_bronze(subset="FD001", split="train", columns=None, filesystem=None) -> pd.DataFrame:
     """Lit le bronze depuis le lake.

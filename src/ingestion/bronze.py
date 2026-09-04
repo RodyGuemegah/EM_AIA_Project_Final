@@ -35,10 +35,10 @@ from pathlib import Path
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
-from src.storage import get_lake_filesystem, lake_path
 
 from src.cmapss import load_test, load_train
 from src.fleet import add_flight_calendar
+from src.storage import get_lake_filesystem, lake_path
 
 PIPELINE_VERSION = "0.1.0"
 SUBSETS = ["FD001", "FD002", "FD003", "FD004"]
