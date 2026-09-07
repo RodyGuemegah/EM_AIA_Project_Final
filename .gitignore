@@ -6,6 +6,8 @@ __pycache__/
 .DS_Store
 .env
 
+models/ 
+
 # Données : jamais dans Git. Seul un échantillon léger sera versionné.
 data/raw/*
 data/interim/*
