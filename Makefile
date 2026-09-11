@@ -1,4 +1,4 @@
-.PHONY: install test lint sanity ingest clean
+.PHONY: install test lint sanity ingest ingest-sdr clean
 
 install:
 	python3 -m venv .venv
@@ -17,6 +17,9 @@ sanity:
 
 ingest:
 	.venv/bin/python -m src.ingestion
+
+ingest-sdr:
+	.venv/bin/python -m src.ingestion.sdr
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
