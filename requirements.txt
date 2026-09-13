@@ -5,7 +5,7 @@ duckdb>=1.0
 scikit-learn>=1.5
 matplotlib>=3.8
 python-dotenv>=1.0
-
+requests>=2.34
 # Qualité de code
 ruff>=0.6
 pytest>=8.0

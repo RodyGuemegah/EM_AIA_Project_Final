@@ -1,4 +1,4 @@
-.PHONY: install test lint sanity ingest ingest-sdr bench clean
+.PHONY: install test lint sanity ingest ingest-sdr ingest-weather bench clean
 
 install:
 	python3 -m venv .venv
@@ -20,6 +20,9 @@ ingest:
 
 ingest-sdr:
 	.venv/bin/python -m src.ingestion.sdr
+
+ingest-weather:
+	.venv/bin/python -m src.ingestion.weather_fetch
 
 bench:
 	.venv/bin/python -m benchmarks.volumetrie

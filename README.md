@@ -75,6 +75,26 @@ Sortie attendue sur les trois millésimes : **191 379 lignes, 36 partitions mens
 > fabrication sur de la fabrication. Le rattachement éventuel sera construit — et
 > justifié — en silver.
 
+## La météo (Open-Meteo)
+
+Troisième source : la météo quotidienne aux 10 aéroports de la flotte, sur toute sa
+période d'exploitation (2022-01-01 → 2024-01-31). Quatre variables par jour et par
+aéroport : températures max/min (°C), précipitations (mm), vent max (km/h). L'API
+archive Open-Meteo est publique et sans clé.
+
+```bash
+make ingest-weather                                   # écrit dans bronze/weather_daily
+python -m src.ingestion.weather_fetch --dry-run       # bilan sans écrire
+```
+
+Sortie attendue : **7 610 lignes** (10 aéroports × 761 jours), 25 partitions mensuelles.
+
+> **C'est la première source qui se joint vraiment à la flotte.** `src/fleet` attribue à
+> chaque vol un `origin`, une `destination` (codes OACI réels) et une `flight_date`. La
+> météo est indexée par `(airport, date)` : la jointure
+> `engine_sensors.(origin | destination, flight_date) ↔ weather_daily.(airport, date)`
+> est exacte, sans hypothèse. Les SDR, eux, ne se joignaient pas.
+
 ## Choix de conception
 
 | Décision | Justification |
@@ -85,6 +105,7 @@ Sortie attendue sur les trois millésimes : **191 379 lignes, 36 partitions mens
 | SDR ingérés sans filtrer les chapitres non-moteur | 96 % des SDR concernent la cellule. Les écarter à l'ingestion interdirait de rejouer le traitement et de retrouver le fichier FAA d'origine. Le filtrage est un choix d'analyse : il appartient au silver. |
 | Dates SDR conservées en clair à côté des dates typées | Convertir « 01/03/2022 » en 3 janvier suppose que la FAA écrit en MM/DD/YYYY. Garder `*_raw` permet à un auditeur de vérifier l'hypothèse sans re-télécharger la source. |
 | Clés de partition en `int32`, jamais nullables | Une colonne de partition nullable produit un dataset que pyarrow écrit mais refuse de relire. Une date illisible part en quarantaine `difficulty_year=-1`. |
+| Météo : coordonnées demandées **et** servies conservées | Open-Meteo recale chaque position sur sa grille de réanalyse (LFPG demandé à 49.0097 → servi à 49.0334). C'est l'équivalent des `*_raw` pour une API : la valeur demandée est l'hypothèse, la valeur servie est la mesure. `source_url` garde la requête complète pour la rejouer. |
 | Erreur explicite si le nombre de colonnes est faux | Échouer vite et clairement plutôt que produire un DataFrame silencieusement décalé. |
 
 ## Structure
@@ -94,6 +115,7 @@ src/cmapss/loader.py      chargement C-MAPSS + calcul du RUL
 src/fleet/scheduler.py    planificateur de vols simulé (projette les cycles C-MAPSS sur un calendrier)
 src/ingestion/bronze.py   ingestion C-MAPSS vers la couche bronze (Parquet partitionné, MinIO)
 src/ingestion/sdr.py      ingestion des SDR FAA vers la couche bronze (source indépendante)
+src/ingestion/weather_fetch.py  ingestion météo Open-Meteo aux aéroports de la flotte (se joint aux vols)
 src/transformation/silver.py  couche silver (capteurs plats, régime de vol, historique)
 src/storage/lake.py       accès au data lake MinIO (S3FileSystem)
 src/models/dataset.py     préparation du dataset ML (split train/test par moteur)
@@ -107,6 +129,7 @@ data/                     données locales (non versionnées)
 - [x] Planificateur de vols — projeter les cycles C-MAPSS sur un calendrier réel
 - [x] Ingestion vers MinIO en Parquet partitionné (couche bronze)
 - [x] Seconde source : SDR FAA (191 379 événements de maintenance, 2022-2024)
+- [x] Troisième source : météo quotidienne Open-Meteo aux 10 aéroports (7 610 lignes)
 - [ ] Couches silver / gold
 - [ ] Star schema dbt + tests qualité
 - [ ] DAG Airflow post-vol
