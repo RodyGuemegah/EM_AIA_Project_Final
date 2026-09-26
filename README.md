@@ -122,6 +122,7 @@ src/models/dataset.py     préparation du dataset ML (split train/test par moteu
 src/sanity.py             contrôle de bon fonctionnement
 tests/                    tests unitaires sur données factices
 data/                     données locales (non versionnées)
+> Architecture : voir `docs/architecture/vue_ensemble.md`
 ```
 
 ## Prochaines étapes
