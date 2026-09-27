@@ -1,11 +1,15 @@
 # safran-data-platform
 
-Plateforme de maintenance prédictive des moteurs d'avion — dépôt n°1 (blocs 1, 2, 3).
-Projet de certification Mastère 2 Architecte en IA — SODJI Rodney.
+
+> Plateforme Data Engineering pour la maintenance prédictive de moteurs aéronautiques.
+Projet de certification — Mastère 2 Architecte en IA  
+Dépôt 1/2 : ingestion, data lake, transformations et préparation des données.
 
 > ⚠️ **Note de substitution des données** — les données propriétaires SAFRAN n'étant pas
-> accessibles, ce projet s'appuie sur le jeu public NASA C-MAPSS (Turbofan Engine
-> Degradation Simulation) du domaine aéronautique.
+> accessibles, ce projet s'appuie sur trois sources publiques : NASA C-MAPSS (capteurs
+> moteur, simulation), les Service Difficulty Reports de la FAA (événements de
+> maintenance réels) et les archives Open-Meteo (météo réelle). Détail source par
+> source dans `docs/note_substitution_donnees.md`.
 
 ---
 
@@ -13,7 +17,7 @@ Projet de certification Mastère 2 Architecte en IA — SODJI Rodney.
 
 ```bash
 make install          # crée .venv et installe les dépendances
-make test             # 22 tests sur données factices — doit passer sans données réelles
+make test             # 40 tests sur données factices — doit passer sans données réelles
 ```
 
 `make test` fonctionne **avant** tout téléchargement : les tests génèrent eux-mêmes
@@ -31,6 +35,8 @@ de la présence d'un jeu de données lourd.
 ```bash
 make sanity
 ```
+`make sanity` vérifie que les fichiers C-MAPSS attendus sont présents,
+lisibles et conformes à la structure attendue avant de lancer les traitements.
 
 Sortie attendue sur le vrai FD001 : **20 631 lignes, 100 moteurs, 6 capteurs constants**
 (`sensor_01, 05, 10, 16, 18, 19`). Le `sensor_06` ne prend que 2 valeurs distinctes :
@@ -119,18 +125,35 @@ src/ingestion/weather_fetch.py  ingestion météo Open-Meteo aux aéroports de l
 src/transformation/silver.py  couche silver (capteurs plats, régime de vol, historique)
 src/storage/lake.py       accès au data lake MinIO (S3FileSystem)
 src/models/dataset.py     préparation du dataset ML (split train/test par moteur)
+src/models/baseline.py    modèle témoin : régression linéaire sur capteurs bruts (RMSE 21,98)
 src/sanity.py             contrôle de bon fonctionnement
 tests/                    tests unitaires sur données factices
 data/                     données locales (non versionnées)
-> Architecture : voir `docs/architecture/vue_ensemble.md`
 ```
 
-## Prochaines étapes
+## Documentation
+
+| sujet | document |
+|---|---|
+| Architecture | `docs/architecture/vue_ensemble.md` |
+| Couche gold (spécification) | `docs/architecture/gold_schema.md` |
+| Décisions d'architecture | `docs/adr/` |
+| Substitution des données | `docs/note_substitution_donnees.md` |
+| Volumétrie mesurée | `docs/benchmarks/volumetrie.md` |
+| Déploiement des deux dépôts | `docs/guide_deploiement.md` |
+| Gouvernance et risques | `docs/plan_gouvernance.md` |
+| Registre RGPD | `docs/registre_rgpd.md` |
+| Analyse AI Act | `docs/conformite.md` |
+
+La modélisation, le registre de modèles, l'API et la supervision sont dans le
+dépôt voisin **safran-mlops**.
+
+## État d'avancement
 
 - [x] Planificateur de vols — projeter les cycles C-MAPSS sur un calendrier réel
 - [x] Ingestion vers MinIO en Parquet partitionné (couche bronze)
 - [x] Seconde source : SDR FAA (191 379 événements de maintenance, 2022-2024)
 - [x] Troisième source : météo quotidienne Open-Meteo aux 10 aéroports (7 610 lignes)
-- [ ] Couches silver / gold
-- [ ] Star schema dbt + tests qualité
-- [ ] DAG Airflow post-vol
+- [x] Couche silver : capteurs plats, régime de vol, features d'historique
+- [x] Couche gold : schéma en étoile implémenté (`docs/architecture/gold_schema.md`)
+- [ ] Orchestration du pipeline quotidien — hors périmètre, voir `docs/guide_deploiement.md` §12

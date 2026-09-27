@@ -72,7 +72,7 @@ def define_flight_regime(df: pd.DataFrame) -> pd.DataFrame:
     return df  # Placeholder, à remplacer par la logique réelle
 
 def add_history(df: pd.DataFrame, capteurs: list[str]) -> pd.DataFrame:
-    """Ajoute 3 colonnes par capteur : moyenne glissante, pente, dérive.
+    """3 colonnes par capteur : moyenne glissante, pente, dérive.
 
     LE groupby("engine_id") EST VITAL. Sans lui, la moyenne du premier vol
     du moteur 42 inclurait les derniers vols du moteur 41 — deux machines
@@ -100,7 +100,6 @@ def add_history(df: pd.DataFrame, capteurs: list[str]) -> pd.DataFrame:
     return df
 
 def transform(df: pd.DataFrame) -> pd.DataFrame:
-    """Enchaîne les trois opérations, dans l'ordre."""
     df, capteurs = delete_flat_sensors_(df)
     df = define_flight_regime(df)
     df = add_history(df, capteurs)
@@ -110,7 +109,6 @@ def transform(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 def write_silver(df: pd.DataFrame, filesystem=None) -> str:
-    """Écrit le silver, partitionné comme le bronze."""
     if filesystem is None:
         filesystem = get_lake_filesystem()
 

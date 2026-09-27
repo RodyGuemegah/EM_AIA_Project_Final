@@ -11,7 +11,7 @@ Les données propriétaires de SAFRAN n'étant pas accessibles, ce projet s'appu
 
 Elle répond au retour du jury : *« il faut démontrer ou simuler de façon crédible les autres sources, volumes et flux, sans prétendre que C-MAPSS suffit à lui seul »*.
 
-**Six sources réelles, trois éléments générés.** Ce qui est fabriqué n'est pas la donnée — c'est le rattachement entre des jeux réels.
+**Six sources réelles, deux éléments générés.** Ce qui est fabriqué n'est pas la donnée — c'est le rattachement entre des jeux réels.
 
 ---
 
@@ -26,7 +26,6 @@ Elle répond au retour du jury : *« il faut démontrer ou simuler de façon cr�
 | Référentiel aéroportuaire | Codes OACI réels | **Réel** | 10 aéroports européens | Sous-ensemble restreint |
 | Nomenclature composants | Codes JASC / chapitres ATA | **Standard public** | 2 066 rapports ATA 72 (moteur) | — |
 | Plans de vol et immatriculations | Généré par `src.fleet` | Généré | 1 416 appareils | Rotations simulées, non issues de données réelles |
-| Identités de techniciens | Généré, pseudonymisées | Généré | — | Nécessaire pour rendre le RGPD applicable |
 | Appariement moteur ↔ avion ↔ vols | Généré | Généré | — | Aucun référentiel public ne permet ce rattachement |
 
 ---
@@ -78,7 +77,7 @@ Le flux couvre du 1er janvier 2022 au 27 janvier 2024, réparti sur 25 partition
 
 **L'appariement moteur ↔ avion ↔ vols.** Aucun référentiel public ne relie une unité C-MAPSS à un appareil réel et à son historique de vols. Ce rattachement est tiré de façon déterministe, reproductible par graine fixée.
 
-**Les identités de techniciens.** Les SDR sont anonymisés. Or le bloc 1 exige une gouvernance RGPD applicable : sans données à caractère personnel dans le pipeline, la pseudonymisation serait décorative. Ces identités sont générées puis pseudonymisées par hachage salé.
+**Aucune identité fictive.** Le RGPD s'applique sans rien fabriquer : les immatriculations des SDR sont réelles et, pour les appareils détenus par des particuliers, désignent indirectement leur propriétaire via le registre public de la FAA. Voir `docs/registre_rgpd.md`.
 
 **Le facteur d'échelle.** Utilisé uniquement pour le benchmark de volumétrie, avec de nouveaux identifiants de moteurs à chaque réplication afin de ne pas biaiser la mesure de compression.
 
